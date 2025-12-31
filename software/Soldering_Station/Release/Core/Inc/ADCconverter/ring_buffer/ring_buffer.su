@@ -1,0 +1,9 @@
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:10:6:swapValues	0	static
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:17:6:ascending	0	static
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:22:6:descending	0	static
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:27:6:copyArray	12	static
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:35:6:sortArray	32	static
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:49:8:averageValue	8	static
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:59:6:RING_BUF_Init	16	static
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:69:6:RING_BUF_Push	8	static
+../Core/Inc/ADCconverter/ring_buffer/ring_buffer.c:116:10:RING_BUF_getFiltered	32	static

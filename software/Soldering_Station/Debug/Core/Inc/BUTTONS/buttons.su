@@ -1,0 +1,5 @@
+../Drivers/CMSIS/Include/core_cm4.h:1775:22:__NVIC_ClearPendingIRQ	16	static
+../Core/Inc/BUTTONS/buttons.c:21:9:HAL_GPIO_GET_REAL_NUMBER	16	static
+../Core/Inc/BUTTONS/buttons.c:78:10:HAL_GPIO_GET_HAL_PIN	16	static
+../Core/Inc/BUTTONS/buttons.c:135:6:HAL_GPIO_EXTI_Callback	16	static,ignoring_inline_asm
+../Core/Inc/BUTTONS/buttons.c:151:6:BUTTON_IRQ_Debounce	24	static

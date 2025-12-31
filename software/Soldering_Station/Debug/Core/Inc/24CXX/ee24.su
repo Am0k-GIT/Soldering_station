@@ -1,0 +1,8 @@
+../Core/Inc/24CXX/ee24.c:41:6:EE24_Delay	16	static
+../Core/Inc/24CXX/ee24.c:60:6:EE24_Lock	16	static
+../Core/Inc/24CXX/ee24.c:71:6:EE24_UnLock	16	static
+../Core/Inc/24CXX/ee24.c:91:6:EE24_Init	32	static
+../Core/Inc/24CXX/ee24.c:163:6:EE24_Read	56	static
+../Core/Inc/24CXX/ee24.c:204:6:EE24_Write	48	static
+../Core/Inc/24CXX/ee24.c:279:6:EE24_ReadCircle	48	static
+../Core/Inc/24CXX/ee24.c:323:6:EE24_WriteCircle	56	static

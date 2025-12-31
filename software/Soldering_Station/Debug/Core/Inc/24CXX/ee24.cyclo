@@ -1,0 +1,8 @@
+../Core/Inc/24CXX/ee24.c:41:6:EE24_Delay	1
+../Core/Inc/24CXX/ee24.c:60:6:EE24_Lock	2
+../Core/Inc/24CXX/ee24.c:71:6:EE24_UnLock	1
+../Core/Inc/24CXX/ee24.c:91:6:EE24_Init	4
+../Core/Inc/24CXX/ee24.c:163:6:EE24_Read	2
+../Core/Inc/24CXX/ee24.c:204:6:EE24_Write	5
+../Core/Inc/24CXX/ee24.c:279:6:EE24_ReadCircle	5
+../Core/Inc/24CXX/ee24.c:323:6:EE24_WriteCircle	5
