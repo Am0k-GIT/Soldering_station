@@ -12,7 +12,7 @@
 
 ## Особенности.
 <p align="center">
-  <img src="images/preview.png" height="600"/>
+  <img src="images/station_2.jpg" height="600"/>
 </p>
 
 Основные особенности:
