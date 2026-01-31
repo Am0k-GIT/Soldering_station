@@ -77,6 +77,7 @@ volatile bool flag_TIM5_Pulse_Start = false;                                   /
 volatile bool flag_ADC_Start = false;                                          // ADC start flag
 volatile bool flag_ADC_need_restart = false;                                   // the pulse is completed before the end of the ADC operation
 
+volatile bool flag_OFF = false;                                                // Station need OFF flag
 volatile bool flag_TIM10_Start = false;                                        // TIM10 start flag
 volatile bool flag_IT_SLEEP = false;                                           // sleep mode countdown timer operation flag
 volatile bool flag_IT_IRON_SENSOR = false;                                     // soldering iron handle interrupt flag
@@ -92,6 +93,8 @@ volatile bool IRON_ext_sensor = false;
 volatile bool flag_update_UI = false;
 volatile bool flag_IRON_preheat_start = false;
 volatile bool flag_IRON_preheat = false;
+volatile bool flag_HOTAIR_preheat_start = false;
+volatile bool flag_HOTAIR_preheat = false;
 
 volatile bool flag_EEPROM_IRON_SETTINGS_OK = false;
 volatile bool flag_EEPROM_HOTAIR_SETTINGS_OK = false;
@@ -705,11 +708,11 @@ void TIMers_Update (void)
   else
   {
     TIM2->CCR1 = 0;
-    if (HOTAIR_real_temp > HOTAIR_TEMP_COOLDOWN)
+    if (HOTAIR_real_temp > HOTAIR_TEMP_COOLDOWN_H)
     {
       TIM1->CCR2 = tim1_ARR * HOTAIR_BLOW_COOLDOWN / 100;
     }
-    else
+    else if  (HOTAIR_real_temp < HOTAIR_TEMP_COOLDOWN_L)
     {
       TIM1->CCR2 = 0;
     }
@@ -765,6 +768,22 @@ void PID_REG_IRON (void)
 // ****************** Работа PID регулятора ***********************************
 void PID_REG_HOTAIR (void)
 {
+  if (flag_HOTAIR_preheat_start)
+  {
+    flag_HOTAIR_preheat_start = false;
+    flag_HOTAIR_preheat = true;
+    PID_SetLimits (&PID_HOTAIR, 0, (TIM2->ARR) * HOTAIR_PREHEAT_POWER / 100);
+    PID_Set_K (&PID_HOTAIR, (float)PID_P_HOTAIR_SCALLING * HOTAIR_PREHEAT_P_FACTOR * HOTAIR_tools.P, 0, 0, PID_I_RANGE);
+    PID_Restart (&PID_HOTAIR);
+  }
+  if (flag_HOTAIR_preheat && (HOTAIR_real_temp + HOTAIR_PREHEAT_RANGE > HOTAIR_set_temp))
+  {
+    flag_HOTAIR_preheat = false;
+    PID_SetLimits (&PID_HOTAIR, 0, TIM2->ARR);
+    PID_Set_K (&PID_HOTAIR, (float)PID_P_HOTAIR_SCALLING * HOTAIR_tools.P, (float)PID_I_HOTAIR_SCALLING * HOTAIR_tools.I,
+               (float)PID_D_HOTAIR_SCALLING * HOTAIR_tools.D, PID_I_RANGE);
+    PID_Restart (&PID_HOTAIR);
+  }
 
   if (flag_HOTAIR_on)
   {
@@ -805,8 +824,15 @@ void ADC_Work (void)
 
     uint32_t vrefintCal = (*VREFINT_CAL_ADDR);                                 // получаем калибровочное значение АЦП
     K_adc = (float) vrefintCal / adc_filtered[6];                              // считаем коэффициент поправки
-    IRON_amperage = (adc_filtered[7] - HW_SET.ZERO_CURRENT) * ACS712_K * get_K(HW_SET.K_CURRENT);
-    voltage24 = GetVoltageRVD (K_adc * adc_filtered[5], 4095, 3.3, R314, R315) * get_K(HW_SET.K_VOLTAGE);
+
+    if (adc_filtered[7] < HW_SET.ZERO_CURRENT)
+      IRON_amperage = 0;
+    else
+      IRON_amperage = (adc_filtered[7] - HW_SET.ZERO_CURRENT) * ACS712_K * get_K(HW_SET.K_CURRENT);
+
+    static const float voltage_divider_k = (float)(R314 + R315) / (4095.0f * R315);
+    voltage24 = K_adc * adc_filtered[5] * 3.3 * voltage_divider_k;
+    //voltage24 = GetVoltageRVD (K_adc * adc_filtered[5], 4095, 3.3, R314, R315) * get_K(HW_SET.K_VOLTAGE);
 
     temperature_ONBOARD_NTC =  get_NTC_T (HW_SET.NTC, get_K(HW_SET.K_INT_NTC), adc_filtered[4]);
 
@@ -853,8 +879,13 @@ void Check_Protection (void)
     flag_IRON_on = false;
   }
 
-  if (flag_HOTAIR_off && flag_IRON_off)                                        // флаги отключения фена и паяльника подняты
-    HAL_GPIO_WritePin (PS_ON_GPIO_Port, PS_ON_Pin, 0);                         // отключаем паяльную станцию
+  if ((flag_HOTAIR_off && flag_IRON_off) || flag_OFF)                          // флаги отключения фена и паяльника подняты
+  {
+    if (IRON_real_temp <= IRON_TEMP_COOLDOWN_H && HOTAIR_real_temp <= HOTAIR_TEMP_COOLDOWN_H)
+    {                                                                          // инструменты остыли
+      HAL_GPIO_WritePin (PS_ON_GPIO_Port, PS_ON_Pin, 0);                       // отключаем паяльную станцию
+    }
+  }
 
   if (IRON_MAX_ADC_count > ADC_BUFFER_SIZE)
   {
@@ -946,7 +977,8 @@ void Check_Sleep (void)
       }
       else                                                                     // если фен не в режиме OFF
       {
-
+        if (flag_HOTAIR_on)
+          flag_HOTAIR_preheat_start = true;                                    // запускаем преднагрев
       }
     }
     flag_HOTAIR_WAKEUP = false;                                                // снимаем флаг пробуждения
@@ -2300,8 +2332,11 @@ void Button_React (uint16_t key_number, bool longpress)
           if (longpress)
           {
             // OFF
-            HAL_GPIO_WritePin (PS_ON_GPIO_Port, PS_ON_Pin, 0);
-            HAL_GPIO_WritePin (SSR_ON_GPIO_Port, SSR_ON_Pin, 0);
+            flag_IRON_on = false;
+            flag_HOTAIR_on = false;
+            flag_OFF = true;
+            //HAL_GPIO_WritePin (PS_ON_GPIO_Port, PS_ON_Pin, 0);
+            //HAL_GPIO_WritePin (SSR_ON_GPIO_Port, SSR_ON_Pin, 0);
           }
           else
           {
@@ -2367,6 +2402,7 @@ void Button_React (uint16_t key_number, bool longpress)
               {
                 flag_IRON_on = true;
                 flag_IRON_preheat_start = true;
+                flag_OFF = false;
               }
             }
           }
@@ -2390,6 +2426,8 @@ void Button_React (uint16_t key_number, bool longpress)
               else
               {
                 flag_HOTAIR_on = true;
+                flag_HOTAIR_preheat_start = true;
+                flag_OFF = false;
               }
             }
           }

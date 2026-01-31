@@ -11,7 +11,7 @@
 //#define DEBUG_UART
 #define UART_HEANDLER                            &huart6
 
-#define VERSION                                  251224
+#define VERSION                                  260131
 
 #define DEF_IRON_MIN_TEMP                        150
 #define DEF_IRON_MAX_TEMP                        450
@@ -93,14 +93,19 @@
 #define LOADING_SCREEN_TIME                      3000                          // mS
 
 #define IRON_HOLD_TEMP                           180                           // °C
-#define IRON_PREHEAT_POWER                       25                            // %
+#define IRON_PREHEAT_POWER                       30                            // %
 #define IRON_PREHEAT_P_FACTOR                    0.25
 #define IRON_PREHEAT_RANGE                       10                            // °C
+#define HOTAIR_PREHEAT_POWER                     100                           // %
+#define HOTAIR_PREHEAT_P_FACTOR                  1
+#define HOTAIR_PREHEAT_RANGE                     20                            // °C
 #define HOTAIR_HOLD_TEMP                         100                           // °C
 #define HOTAIR_SLEEP_FAN                         100                           // %
 #define DEEP_SLEEP_TIME                          10*60                         // S
 #define OFF_TIME                                 20*60                         // S
-#define HOTAIR_TEMP_COOLDOWN                     120                           // °C
+#define IRON_TEMP_COOLDOWN_H                     150                           // °C
+#define HOTAIR_TEMP_COOLDOWN_L                   110                           // °C
+#define HOTAIR_TEMP_COOLDOWN_H                   130                           // °C
 #define HOTAIR_BLOW_COOLDOWN                     80                            // %
 
 #define PID_P_IRON_SCALLING                      0.2
