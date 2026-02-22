@@ -14,57 +14,46 @@ extern "C"
 
 float ADC_converter(raw_value_t current_raw_value, calibration_entry_t table[], uint8_t size)
 {
-    uint8_t left_index = 0;                                                    // самый левый индекс КТ
-    uint8_t right_index = size - 1;                                            // правый индекс КТ
-    bool ascending_sort = false;                                               // метод сортировки
-    if (table[left_index].raw_value < table[right_index].raw_value)            // если таблица идет по возрастанию
-        ascending_sort = true;                                                 // используем сортировку по возрастанию
-        // получаем сырые показания
-    if (ascending_sort)                                                        // если сортировка по возрастанию
+    bool ascending_sort = (table[0].raw_value < table[size - 1].raw_value);    // определяем направление сортировки
+    // проверка границ с ранним выходом
+    if (ascending_sort)
     {
-        if (current_raw_value <= table[left_index].raw_value)                  // проверяем левый предел
-            return table[left_index].proc_value;                               // подгоняем значение под крайнее левое
-        if (current_raw_value >= table[right_index].raw_value)                 // проверяем правый предел
-            return table[right_index].proc_value;                              // подгоняем значение под крайнее правое
+        if (current_raw_value <= table[0].raw_value)
+            return table[0].proc_value;
+        if (current_raw_value >= table[size - 1].raw_value)
+            return table[size - 1].proc_value;
     }
-    else                                                                       // если сортировка по убыванию
+    else
     {
-        if (current_raw_value >= table[left_index].raw_value)                  // проверяем левый предел
-            return table[left_index].proc_value;                               // подгоняем значение под крайнее левое
-        if (current_raw_value <= table[right_index].raw_value)                 // проверяем правый предел
-            return table[right_index].proc_value;                              // подгоняем значение под крайнее правое
+        if (current_raw_value >= table[0].raw_value)
+            return table[0].proc_value;
+        if (current_raw_value <= table[size - 1].raw_value)
+            return table[size - 1].proc_value;
     }
-    while ((right_index - left_index) > 1)                                     // пока не получим минимальный интервал в таблице
-    {
-        uint8_t mid_index = (left_index + right_index) >> 1;                   // находим середину
-        raw_value_t mid = table[mid_index].raw_value;                          // читаем среднее сырое значение из таблицы
 
-        if (((current_raw_value > mid) && (!ascending_sort)) || ((current_raw_value < mid) && (ascending_sort)))
-        // если показания АЦП больше среднего значения из таблицы
-        {
-            right_index = mid_index;                                           // смещаем правый индекс
-        }
-        else                                                                   // иначе
-        {
-            left_index = mid_index;                                            // смещаем левый индекс
-        }
-    }                                                                          // теперь в минимальное возможном интервале
-    raw_value_t vl = table[left_index].raw_value;                              // читаем из таблицы левое сырое значение
-    proc_value_t vl_proc = table[left_index].proc_value;                       // и соответствующее конвертированное значение
-    if (((current_raw_value >= vl) && (!ascending_sort)) || ((current_raw_value <= vl) && (ascending_sort)))
-    // если показания АЦП больше или равны левому сырому значению
+    uint8_t left = 0;
+    uint8_t right = size - 1;
+    while (right - left > 1)
     {
-        return vl_proc;                                                        // возвращаем соответствующее конвертированное значение
+        uint8_t mid = (left + right) >> 1;
+        if ((current_raw_value < table[mid].raw_value) == ascending_sort)
+        {
+            right = mid;
+        }
+        else
+        {
+            left = mid;
+        }
     }
-    raw_value_t vr = table[right_index].raw_value;                             // читаем из таблицы правое сырое значение
-    raw_value_t vd = abs(vl - vr);                                             // подсчитываем разность сырых значений
-    float res = table[right_index].proc_value;                                 // в результат записываем правое конвертированное значение
-    if (vd)                                                                    // если  разность сырых значений не нулевая
-    {
-        res -= ((res - vl_proc) * abs(current_raw_value - vr) / vd);
-        // проводим линейную интерполяцию для поиска смещения конвертированного значения
-    }                                                                          // и вычитаем из результата
-    return res;                                                                // возвращаем результат
+    raw_value_t vl = table[left].raw_value;
+    raw_value_t vr = table[right].raw_value;
+    proc_value_t pl = table[left].proc_value;
+    proc_value_t pr = table[right].proc_value;
+
+    float delta_raw = vr - vl;
+    float offset = current_raw_value - vl;
+
+    return pl + (pr - pl) * offset / delta_raw;
 }
 
 float GetVoltageRVD(uint16_t ADC_CURRENT, uint16_t ADC_FULL, float Vref, uint32_t R_UP, uint32_t R_DOWN)
