@@ -11,7 +11,7 @@
 //#define DEBUG_UART
 #define UART_HEANDLER                            &huart6
 
-#define VERSION                                  260222
+#define VERSION                                  260412
 
 #define DEF_IRON_MIN_TEMP                        150
 #define DEF_IRON_MAX_TEMP                        450
